@@ -7,13 +7,13 @@ from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
 from tqdm.auto import tqdm
 
+# Kiểm tra thiết bị
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print("Using device:", DEVICE)
 
-# Data: MNIST
+# Tập dữ liệu: MNIST
 transform = transforms.Compose([
-    transforms.ToTensor(),
-    transforms.Normalize((0.1307,), (0.3081,))
+    transforms.ToTensor()
 ])
 
 root = os.path.join(os.getcwd(), "data")
@@ -32,22 +32,24 @@ for images, labels in train_loader:
     print(f"Batch labels shape: {labels.shape}")
     break
 
-INPUT_SIZE = 28 * 28 
-HIDDEN_SIZE = 128
+# Định nghĩa mô hình
+INPUT_SIZE = 28 * 28
+HIDDEN_SIZE_1 = 512
+HIDDEN_SIZE_2 = 256
 OUTPUT_SIZE = 10
 
 model = nn.Sequential(
     nn.Flatten(),
-    nn.Linear(INPUT_SIZE, HIDDEN_SIZE),
+    nn.Linear(INPUT_SIZE, HIDDEN_SIZE_1),
     nn.ReLU(),
-    nn.Linear(HIDDEN_SIZE, HIDDEN_SIZE),
+    nn.Linear(HIDDEN_SIZE_1, HIDDEN_SIZE_2),
     nn.ReLU(),
-    nn.Linear(HIDDEN_SIZE, OUTPUT_SIZE)
-).to(DEVICE)
+    nn.Linear(HIDDEN_SIZE_2, OUTPUT_SIZE)
+)
 
 summary(model, (1, 28, 28))
 
-# Training utilities
+# Hàm huấn luyện và kiểm tra
 def train_one_epoch(model, loader, optimizer):
     model.train()
     total, correct, total_loss = 0, 0, 0.0
@@ -79,8 +81,9 @@ def evaluate(model, loader):
             total += x.size(0)
     return total_loss / total, correct / total
 
-lr = 0.01
-epochs = 10
+# Huấn luyện và kiểm tra
+lr = 1e-3
+epochs = 5
 
 optimizer = torch.optim.Adam(model.parameters(), lr=lr)
 for ep in range(1, epochs+1):
@@ -88,5 +91,6 @@ for ep in range(1, epochs+1):
     v_loss, v_acc = evaluate(model, val_loader)
     print(f"Epoch {ep}: train_loss={t_loss:.4f} train_acc={t_acc:.4f} | val_loss={v_loss:.4f} val_acc={v_acc:.4f}")
 
+# Lưu tham số mô hình
 PATH = "model.pt"
 torch.save(model.state_dict(), PATH)
